@@ -1,44 +1,43 @@
-import mongoose,{Schema} from "mongoose";
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import mongoose, { Schema } from "mongoose"; // Importing Mongoose and Schema
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2"; // Importing mongoose-aggregate-paginate-v2 for pagination
 
-
-const videoSchema=new Schema({
-    videoFile:{
-        type:String,//cloudnari url
-        required:true
+const videoSchema = new Schema({ // Defining the video schema
+    videoFile: { // Video file field
+        type: String, // Data type: String (Cloudinary URL)
+        required: true // Required field
     },
-    thumbnail:{
-        type:String,
-        required:true
+    thumbnail: { // Thumbnail field
+        type: String, // Data type: String (Cloudinary URL)
+        required: true // Required field
     },
-    title:{
-        type:String,
-        required:true
+    title: { // Title field
+        type: String, // Data type: String
+        required: true // Required field
     },
-    description:{
-        type:String,
-        required:true
+    description: { // Description field
+        type: String, // Data type: String
+        required: true // Required field
     },
-    duration:{
-        type:Number,
-        required:true
+    duration: { // Duration field
+        type: Number, // Data type: Number
+        required: true // Required field
     },
-    views:{
-        type:Number,
-        default:0
+    views: { // Views field
+        type: Number, // Data type: Number
+        default: 0 // Default value: 0
     },
-    isPublished:{
-        type:Boolean,
-        default:true
+    isPublished: { // Is published field
+        type: Boolean, // Data type: Boolean
+        default: true // Default value: true
     },
-    owner:{
-        type:Schema.Types.ObjectId,
-        ref:"User"
+    owner: { // Owner field
+        type: Schema.Types.ObjectId, // Data type: ObjectId
+        ref: "User" // Reference to the User model
     }
-},
-{
-    timestamps:true
-})
-videoSchema.plugin(mongooseAggregatePaginate)
+}, {
+    timestamps: true // Enable timestamps for created and updated dates
+});
 
-export const Video=mongoose.model("Video",videoSchema)
+videoSchema.plugin(mongooseAggregatePaginate); // Adding pagination plugin to the schema
+
+export const Video = mongoose.model("Video", videoSchema); // Exporting the Video model

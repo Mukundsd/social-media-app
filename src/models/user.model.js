@@ -1,84 +1,80 @@
-import mongoose,{Schema} from "mongoose";
-import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
-const userSchema=new Schema({
-    username:{
-        type:String,
-        required:true,
-        unique:true,
-        lowercase:true,
-        trim:true,
-        index:true
+import mongoose, { Schema } from "mongoose"; // Importing Mongoose and Schema
+import jwt from "jsonwebtoken"; // Importing JSON Web Token for authentication
+import bcrypt from "bcrypt"; // Importing bcrypt for password hashing
+
+const userSchema = new Schema({ // Defining the user schema
+    username: { // Username field
+        type: String, // Data type: String
+        required: true, // Required field
+        unique: true, // Unique username
+        lowercase: true, // Convert to lowercase
+        trim: true, // Trim whitespace
+        index: true // Create an index for efficient querying
     },
-    email:{
-        type:String,
-        required:true,
-        unique:true,
-        lowercase:true,
-        trim:true,
+    email: { // Email field
+        type: String, // Data type: String
+        required: true, // Required field
+        unique: true, // Unique email
+        lowercase: true, // Convert to lowercase
+        trim: true // Trim whitespace
     },
-    fullname:{
-        type:String,
-        required:true,
-        trim:true,
-        index:true
+    fullname: { // Full name field
+        type: String, // Data type: String
+        required: true, // Required field
+        trim: true, // Trim whitespace
+        index: true // Create an index for efficient querying
     },
-    avatar:{
-        type:String,//cloudanari url
-        required:true,
+    avatar: { // Avatar field
+        type: String, // Data type: String
+        required: true // Required field (Cloudinary URL)
     },
-    coverImage:{
-        type:String,//cloudanari url
+    coverImage: { // Cover image field
+        type: String // Data type: String (Cloudinary URL)
     },
-    watchHistory:[
+    watchHistory: [ // Watch history field
         {
-            type:Schema.Types.ObjectId,
-            ref:"Video"
+            type: Schema.Types.ObjectId, // Data type: ObjectId
+            ref: "Video" // Reference to the Video model
         }
     ],
-    password:{
-        type:String,
-        required:[true,"password is required"]
+    password: { // Password field
+        type: String, // Data type: String
+        required: [true, "password is required"] // Required field with error message
     },
-    refreshToken:{
-        type:string
+    refreshToken: { // Refresh token field
+        type: String // Data type: String
     }
-},
-{
-    timestamps:true
-}
-)
-userSchema.pre("save",async function(next){
-    if(!this.isModified("password"))return next();
-    this.password=bcrypt.hash(this.password,10)
-    next()
-})
-userSchema.method.isPasswordCorrect= async function(password){
-    return bcrypt.compare(password,this.password)
-}
-userSchema.method.generateAccessToken= async function(){
-    return jwt.sign({
-        _id:this._id,
-        email:this.email,
-        username:this.username,
-        fullname:this.fullname
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiresIn:process.env.ACCESS_TOKEN_EXPIRY
-    }
-)
-}
-userSchema.method.generateRefreshToken= async function(){
-    return jwt.sign({
-        _id:this._id,
-        
-    },
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-        expiresIn:process.env.REFRESH_TOKEN_EXPIRY
-    }
-)
-}
+}, {
+    timestamps: true // Enable timestamps for created and updated dates
+});
 
-export const User= mongoose.model("User",userSchema)
+userSchema.pre("save", async function(next) { // Pre-save hook
+    if (!this.isModified("password")) return next(); // Skip if password is not modified
+    this.password = await bcrypt.hash(this.password, 10); // Hash password with bcrypt
+    next(); // Continue with the save operation
+});
+
+userSchema.method.isPasswordCorrect = async function(password) { // Method to check password correctness
+    return await bcrypt.compare(password, this.password); // Compare password with hashed password
+};
+
+userSchema.method.generateAccessToken = async function() { // Method to generate access token
+    return jwt.sign({ // Sign a JSON Web Token
+        _id: this._id, // User ID
+        email: this.email, // User email
+        username: this.username, // User username
+        fullname: this.fullname // User full name
+    }, process.env.ACCESS_TOKEN_SECRET, { // Secret key and options
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY // Token expiration time
+    });
+};
+
+userSchema.method.generateRefreshToken = async function() { // Method to generate refresh token
+    return jwt.sign({ // Sign a JSON Web Token
+        _id: this._id // User ID
+    }, process.env.REFRESH_TOKEN_SECRET, { // Secret key and options
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY // Token expiration time
+    });
+};
+
+export const User = mongoose.model("User", userSchema); // Export the User model
