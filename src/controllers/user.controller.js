@@ -186,5 +186,145 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
           throw new ApiError(400,error?.message||"reftoken is invalid")
      }
 })
+const changeCurrentPassword= asyncHandler(async(req,res)=>{
+     const {oldPassword,newPassword}=req.body
+     const user=await User.findById(req.user?._id)
+     const isPasswordCorrect= await user.
+     isPasswordCorrect(oldPassword)
+     if(!isPasswordCorrect){
+          throw new ApiError(400,"invalid password")
+     }
+     user.password=newPassword
+     await user.save({validateBeforeSave:false})
+     return res
+     .status(200)
+     .json(new ApiResponse(200,{},"password changed succesfully"))
+})
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken}
+const getCurrentUser=asyncHandler(async(req,res)=>{
+     return res.
+     status(200)
+     .json(new ApiResponse(200,req.user,"usert fetched succesfully"))
+})
+
+const updateAccountDetail=asyncHandler(async(req,res)=>{
+     const {fullName,email}=req.body
+     if(!fullName||!email){
+          throw new ApiError(400,"all field are required")
+     }
+     const user=await User.findByIdAndUpdate(
+          req.user?._id,
+          {
+               $set:{
+                    fullName,
+                    email
+               }
+          },
+          {new:true}
+
+     ).select("-password")
+     return res.
+     status(200).
+     json(new ApiResponse(200,user,"account detain updates"))
+})
+const updateAvatar=asyncHandler(async(req,res)=>{
+     const avatarLocalPath = req.file?.path
+     if(!avatarLocalPath){
+          throw new ApiError(400,"avatar file is missing")
+     }
+     const avatar = await uploadOnCloudinary(avatarLocalPath)
+     if(!avatar.url){
+          throw new ApiError(400,'error while uploading avatar')
+     }
+     const user=await User.findByIdAndUpdate(
+          req.user?._id,
+          {
+            $set:{
+               avatar:avatar.url
+            }    
+          },
+          {new:true}
+     ).select("-password")
+     return res.
+     status(200).
+     json(new ApiResponse(200,user,"avatar image updates"))
+
+})
+const getUserChannelProfile=asyncHandler(async(req,res)=>{
+     const {username}=req.params
+
+     if(!username?.trim()){
+          throw new ApiError(400,"username is missing")
+     }
+     const channel = await User.aggregate([
+          {
+               $match:{
+                    username:username?.toLowerCase()
+               }
+          },
+          {
+               $lookup:{
+                    from:"subscriptions",
+                    localField:"_id",
+                    foreignField:"channel",
+                    as:"subscribers"
+               }
+          },
+          {
+               $lookup:{
+                    from:"subscriptions",
+                    localField:"_id",
+                    foreignField:"subscriber",
+                    as:"subscribedTo"
+               }
+          },
+          {
+               $addfield:{
+                    subscribersCount:{
+                         $size:"$subscribers"
+                    },
+                    channelsubscriberToCount:{
+                         $size:"$subscribedTo"
+                    },
+                    isSubscribed:{
+                        if:{$in:[req.user._id,"$subscribers._id"]},
+                        then:true,
+                        else:false
+                    }
+                    
+               }
+          },
+          {
+               $project:{
+                    fullName:1,
+                    username:1,
+                    subscribersCount:1,
+                    channelsubscriberToCount:1,
+                    avatar:1,
+                    isSubscribed:1,
+                    coverImage:1,
+                    email:1
+
+               }
+          }
+     ])
+     if (!channel) {
+          throw new ApiError(400,"chaneel does not exist")
+     } 
+     return res
+     .status(200)
+     .json(
+          new ApiResponse(200,channel[0],"user channel featched succesfully")
+     )
+})
+
+export {registerUser
+     ,loginUser,
+     logoutUser,
+     refreshAccessToken,
+     changeCurrentPassword,
+     getCurrentUser,
+     updateAccountDetail,
+     updateAvatar
+
+}
